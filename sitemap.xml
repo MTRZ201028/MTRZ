@@ -1,6 +1,15 @@
 <font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"><?xml version="1.0" encoding="UTF-8"?> 
  </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"> 
 </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"><url>
- </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;">  <loc></loc>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;">  <loc>http://linkpixelqr.netlify.app/</loc>
  </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"></url>
- </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"></urlset></font></font>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"><url>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;">  <loc>http://linkpixelqr.netlify.app/generate</loc>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"></url>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"><url>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;">  <loc>http://linkpixelqr.netlify.app/camera</loc>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"></url>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"><url>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;">  <loc>http://linkpixelqr.netlify.app/upload</loc>
+ </font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"></url>
+</font></font><font dir="auto" style="vertical-align: inherit;"><font dir="auto" style="vertical-align: inherit;"></urlset></font></font>
