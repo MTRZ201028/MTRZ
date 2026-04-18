@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Link Pixel QR | Camera Scan</title>
+  <meta name="description" content="Scan QR codes in real time with Link Pixel QR." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <main class="container app-shell">
+    <header class="hero glass">
+      <div class="hero-main">
+        <a class="site-brand" href="index.html">
+          <img class="site-logo" src="assets/logo.png" alt="Link Pixel QR" width="56" height="56" decoding="async" />
+          <span class="site-name">Link Pixel QR</span>
+        </a>
+        <span class="badge">Camera Scan</span>
+        <h1>Scan QR codes instantly with your camera</h1>
+        <p>Start camera and point to any QR to decode it live.</p>
+      </div>
+      <button id="theme-toggle" class="btn theme-btn" type="button" aria-label="Toggle theme">Dark Mode</button>
+    </header>
+
+    <nav class="top-nav glass" aria-label="Main navigation">
+      <a class="nav-link" href="index.html">Home</a>
+      <a class="nav-link" href="generate.html">Create QR</a>
+      <a class="nav-link active" href="camera.html">Scan Camera</a>
+      <a class="nav-link" href="upload.html">Upload Image</a>
+    </nav>
+
+    <article id="camera-scanner-container" class="card glass" aria-labelledby="camera-title">
+      <h2 id="camera-title">Scan QR with Camera</h2>
+      <p class="section-note">Allow camera access and place a QR code inside the frame.</p>
+      <div class="actions">
+        <button id="start-scan-btn" class="btn primary" type="button">Start Camera</button>
+        <button id="stop-scan-btn" class="btn" type="button" disabled>Stop Camera</button>
+      </div>
+      <div id="camera-loading" class="loading" hidden>
+        <span class="spinner" aria-label="camera loading"></span>
+      </div>
+      <div id="camera-reader" class="reader"></div>
+      <div class="result-box">
+        <strong>Result:</strong>
+        <p id="scan-result">No scan yet.</p>
+        <button id="open-link-btn" class="btn" type="button" disabled>Open Link</button>
+      </div>
+    </article>
+  </main>
+
+  <script src="script.js" defer></script>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

@@ -37,8 +37,6 @@ const dom = {
   qrContainer: document.getElementById("qr-container"),
   downloadBtn: document.getElementById("download-btn"),
   themeToggle: document.getElementById("theme-toggle"),
-  tabButtons: Array.from(document.querySelectorAll(".tab-btn")),
-  panels: Array.from(document.querySelectorAll(".panel")),
   toast: document.getElementById("toast"),
   startScanBtn: document.getElementById("start-scan-btn"),
   stopScanBtn: document.getElementById("stop-scan-btn"),
@@ -53,6 +51,10 @@ const dom = {
   openUploadLinkBtn: document.getElementById("open-upload-link-btn"),
   uploadLoading: document.getElementById("upload-loading"),
 };
+
+const hasGeneratorPage = Boolean(dom.qrInput && dom.generateBtn && dom.qrContainer);
+const hasCameraPage = Boolean(dom.startScanBtn && dom.stopScanBtn && dom.scanResult);
+const hasUploadPage = Boolean(dom.qrFile && dom.uploadTriggerBtn && dom.uploadResult);
 
 function isValidHttpUrl(value) {
   try {
@@ -102,6 +104,7 @@ const ThemeModule = {
     dom.themeToggle.textContent = state.theme === "dark" ? TEXT.themeLight : TEXT.themeDark;
   },
   init() {
+    if (!dom.themeToggle) return;
     const stored = localStorage.getItem("qr-theme");
     const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     this.apply(stored || (systemDark ? "dark" : "light"));
@@ -117,11 +120,13 @@ const GeneratorModule = {
     return window.QRCode.CorrectLevel[level] ?? window.QRCode.CorrectLevel.M;
   },
   clear() {
+    if (!dom.qrContainer || !dom.downloadBtn) return;
     dom.qrContainer.innerHTML = "";
     state.lastGenerated = "";
     dom.downloadBtn.disabled = true;
   },
   generate(showInputError = true) {
+    if (!hasGeneratorPage) return;
     if (!window.QRCode) {
       showToast(TEXT.errLibrary, "error");
       return;
@@ -163,6 +168,7 @@ const GeneratorModule = {
     }
   },
   download() {
+    if (!hasGeneratorPage) return;
     const qrCanvas = dom.qrContainer.querySelector("canvas");
     const qrImage = dom.qrContainer.querySelector("img");
     const dataUrl = qrCanvas ? qrCanvas.toDataURL("image/png") : qrImage?.src || "";
@@ -177,6 +183,7 @@ const GeneratorModule = {
     showToast(TEXT.successDownloaded);
   },
   init() {
+    if (!hasGeneratorPage) return;
     dom.generateBtn.addEventListener("click", () => this.generate(true));
     dom.downloadBtn.addEventListener("click", () => this.download());
     dom.qrInput.addEventListener("input", () => {
@@ -207,15 +214,18 @@ const CameraModule = {
     return this.scanner;
   },
   setLoading(active) {
+    if (!dom.cameraLoading) return;
     dom.cameraLoading.hidden = !active;
   },
   setResult(text, toastOnSuccess = true) {
+    if (!dom.scanResult || !dom.openLinkBtn) return;
     this.state.scanResult = text || "";
     dom.scanResult.textContent = this.state.scanResult || TEXT.cameraDefaultResult;
     dom.openLinkBtn.disabled = !isValidHttpUrl(this.state.scanResult);
     if (toastOnSuccess && this.state.scanResult) showToast(TEXT.successCameraRead);
   },
   async start() {
+    if (!hasCameraPage) return;
     if (this.state.cameraActive) return;
     try {
       await ensureScannerLibraryLoaded();
@@ -223,7 +233,6 @@ const CameraModule = {
       if (!cameras || cameras.length === 0) {
         this.setResult(TEXT.errNoCamera, false);
         showToast(TEXT.errNoCamera, "error");
-        TabsModule.activate("upload");
         return;
       }
       const scanner = await this.getScanner();
@@ -247,6 +256,7 @@ const CameraModule = {
     }
   },
   async stop() {
+    if (!hasCameraPage) return;
     if (!this.state.cameraActive || !this.scanner) return;
     try {
       await this.scanner.stop();
@@ -262,6 +272,7 @@ const CameraModule = {
     }
   },
   async reset() {
+    if (!hasCameraPage) return;
     if (this.state.cameraActive) await this.stop();
     this.state.scanResult = "";
     this.setResult(TEXT.cameraDefaultResult, false);
@@ -269,6 +280,7 @@ const CameraModule = {
     if (reader) reader.innerHTML = "";
   },
   init() {
+    if (!hasCameraPage) return;
     dom.startScanBtn.addEventListener("click", () => this.start());
     dom.stopScanBtn.addEventListener("click", () => this.stop());
     dom.openLinkBtn.addEventListener("click", () => {
@@ -292,15 +304,18 @@ const UploadModule = {
     qrResult: "",
   },
   setLoading(active) {
+    if (!dom.uploadLoading) return;
     dom.uploadLoading.hidden = !active;
   },
   setResult(text, toastOnSuccess = true) {
+    if (!dom.uploadResult || !dom.openUploadLinkBtn) return;
     this.state.qrResult = text || "";
     dom.uploadResult.textContent = this.state.qrResult || TEXT.uploadDefaultResult;
     dom.openUploadLinkBtn.disabled = !isValidHttpUrl(this.state.qrResult);
     if (toastOnSuccess && this.state.qrResult) showToast(TEXT.successImageRead);
   },
   setPreview(file) {
+    if (!dom.uploadPreview) return;
     if (this.state.imagePreview) URL.revokeObjectURL(this.state.imagePreview);
     const previewUrl = URL.createObjectURL(file);
     this.state.imagePreview = previewUrl;
@@ -394,6 +409,7 @@ const UploadModule = {
     return null;
   },
   async scanFile(file) {
+    if (!hasUploadPage) return;
     if (!file) return;
     this.state.selectedFile = file;
     if (!this.allowedImageTypes.includes(file.type)) {
@@ -437,6 +453,7 @@ const UploadModule = {
     }
   },
   reset() {
+    if (!hasUploadPage) return;
     if (this.state.imagePreview) URL.revokeObjectURL(this.state.imagePreview);
     this.state.selectedFile = null;
     this.state.imagePreview = "";
@@ -449,6 +466,7 @@ const UploadModule = {
     this.setLoading(false);
   },
   init() {
+    if (!hasUploadPage) return;
     dom.uploadTriggerBtn.addEventListener("click", () => dom.qrFile.click());
     dom.qrFile.addEventListener("change", (event) => {
       const file = event.target.files?.[0];
@@ -468,38 +486,11 @@ const UploadModule = {
   },
 };
 
-const TabsModule = {
-  active: "generate",
-  async activate(tabId) {
-    this.active = tabId;
-    dom.tabButtons.forEach((button) => button.classList.toggle("active", button.dataset.tab === tabId));
-    dom.panels.forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${tabId}`));
-    if (tabId === "camera") UploadModule.reset();
-    if (tabId === "upload") await CameraModule.reset();
-  },
-  init() {
-    dom.tabButtons.forEach((button, index) => {
-      button.addEventListener("click", () => this.activate(button.dataset.tab));
-      button.addEventListener("keydown", (event) => {
-        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-        event.preventDefault();
-        const nextIndex = event.key === "ArrowRight"
-          ? (index + 1) % dom.tabButtons.length
-          : (index - 1 + dom.tabButtons.length) % dom.tabButtons.length;
-        dom.tabButtons[nextIndex].focus();
-        this.activate(dom.tabButtons[nextIndex].dataset.tab);
-      });
-    });
-  },
-};
-
 async function bootstrap() {
   ThemeModule.init();
-  TabsModule.init();
   GeneratorModule.init();
   CameraModule.init();
   UploadModule.init();
-  await TabsModule.activate("generate");
 }
 
 window.addEventListener("beforeunload", async () => {

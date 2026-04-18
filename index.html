@@ -3,19 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QR Generator & Scanner Tool | Fast Online QR Utility</title>
-  <meta name="description" content="Generate QR codes, scan with camera, and decode QR images instantly. Fast, responsive, production-ready QR Generator & Scanner web app." />
-  <meta name="keywords" content="QR code generator, QR scanner, QR code reader, online QR tool, upload QR image, camera QR scan" />
-  <meta name="robots" content="index, follow" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="QR Generator & Scanner Tool" />
-  <meta property="og:description" content="Create and scan QR codes instantly with camera and image upload support." />
-  <meta property="og:image" content="https://example.com/og-image.png" />
-  <meta property="og:url" content="https://example.com/" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="QR Generator & Scanner Tool" />
-  <meta name="twitter:description" content="Fast QR generator, camera scanner, and QR image decoder in one app." />
-  <meta name="twitter:image" content="https://example.com/og-image.png" />
+  <title>Link Pixel QR | Home</title>
+  <meta name="description" content="Link Pixel QR — generate QR codes, scan with camera, and decode from images." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
@@ -23,116 +13,54 @@
 </head>
 <body>
   <div class="bg-glow" aria-hidden="true"></div>
+
   <main class="container app-shell">
     <header class="hero glass">
       <div class="hero-main">
-        <span class="badge">SaaS QR Tool</span>
-        <h1>Smart QR Toolkit</h1>
-        <p>Generate, scan, and decode QR codes in seconds.</p>
+        <a class="site-brand" href="index.html">
+          <img class="site-logo" src="assets/logo.png" alt="Link Pixel QR" width="56" height="56" decoding="async" />
+          <span class="site-name">Link Pixel QR</span>
+        </a>
+        <span class="badge">Welcome</span>
+        <h1>A complete QR experience with a new look</h1>
+        <p>Choose your workflow and jump into a dedicated page for creating, scanning, or decoding QR codes.</p>
       </div>
-      <button id="theme-toggle" class="btn theme-btn" type="button" aria-label="Toggle theme">
-        Dark Mode
-      </button>
+      <button id="theme-toggle" class="btn theme-btn" type="button" aria-label="Toggle theme">Dark Mode</button>
     </header>
 
-    <nav class="tabs" aria-label="Tool sections">
-      <button class="tab-btn active" data-tab="generate" type="button">Generate QR</button>
-      <button class="tab-btn" data-tab="camera" type="button">Scan with Camera</button>
-      <button class="tab-btn" data-tab="upload" type="button">Upload QR Image</button>
+    <nav class="top-nav glass" aria-label="Main navigation">
+      <a class="nav-link active" href="index.html">Home</a>
+      <a class="nav-link" href="generate.html">Create QR</a>
+      <a class="nav-link" href="camera.html">Scan Camera</a>
+      <a class="nav-link" href="upload.html">Upload Image</a>
     </nav>
 
-    <section class="panel active" id="panel-generate">
-      <article class="card glass" aria-labelledby="generate-title">
-        <h2 id="generate-title">Generate QR Code</h2>
-        <p class="section-note">Paste content, click Generate, then download your QR in one step.</p>
-        <label for="qr-input">Enter text or URL</label>
-        <textarea id="qr-input" placeholder="https://example.com or any text..." rows="3"></textarea>
-
-        <div class="grid-2">
-          <div>
-            <label for="qr-size">Size (px)</label>
-            <input type="range" id="qr-size" min="128" max="1024" step="32" value="320" />
-            <div class="hint"><span id="qr-size-value">320</span> px</div>
-          </div>
-          <div>
-            <label for="qr-quality">Quality (Error Correction)</label>
-            <select id="qr-quality">
-              <option value="L">Low (L)</option>
-              <option value="M" selected>Medium (M)</option>
-              <option value="Q">High (Q)</option>
-              <option value="H">Highest (H)</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid-2">
-          <div>
-            <label for="qr-fg-color">QR Foreground Color</label>
-            <input id="qr-fg-color" type="color" value="#000000" />
-          </div>
-          <div>
-            <label for="qr-bg-color">Background Color</label>
-            <input id="qr-bg-color" type="color" value="#ffffff" />
-          </div>
-        </div>
-
-        <div class="actions">
-          <button id="generate-btn" class="btn primary">Generate QR</button>
-          <button id="download-btn" class="btn primary" disabled>Download PNG</button>
-        </div>
-
-        <div class="preview-wrap">
-          <div id="qr-container" class="qr-container" aria-label="QR Preview"></div>
-        </div>
+    <section class="home-grid">
+      <article class="feature-card glass">
+        <h2>Create QR Code</h2>
+        <p>Generate high-quality QR codes with custom size, colors, and error correction.</p>
+        <a class="btn primary" href="generate.html">Open Generator</a>
       </article>
-    </section>
 
-    <section class="panel" id="panel-camera">
-      <article id="camera-scanner-container" class="card glass" aria-labelledby="camera-title">
-        <h2 id="camera-title">Scan QR with Camera</h2>
-        <p class="section-note">Start camera and point at a QR code to extract content instantly.</p>
-        <div class="actions">
-          <button id="start-scan-btn" class="btn primary">Start Camera</button>
-          <button id="stop-scan-btn" class="btn" disabled>Stop Camera</button>
-        </div>
-        <div id="camera-loading" class="loading" hidden>
-          <span class="spinner" aria-label="camera loading"></span>
-        </div>
-        <div id="camera-reader" class="reader"></div>
-        <div class="result-box">
-          <strong>Result:</strong>
-          <p id="scan-result">No scan yet.</p>
-          <button id="open-link-btn" class="btn" disabled>Open Link</button>
-        </div>
+      <article class="feature-card glass">
+        <h2>Scan With Camera</h2>
+        <p>Use live camera scanning for instant detection and opening QR links quickly.</p>
+        <a class="btn primary" href="camera.html">Open Scanner</a>
       </article>
-    </section>
 
-    <section class="panel" id="panel-upload">
-      <article id="image-upload-container" class="card glass" aria-labelledby="upload-title">
-        <h2 id="upload-title">Upload QR Image</h2>
-        <p class="upload-help">Choose a PNG / JPG / WEBP image to decode QR.</p>
-        <input id="qr-file" class="file-input visually-hidden" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" />
-        <button id="upload-trigger-btn" class="btn upload-btn" type="button">Upload QR Image</button>
-        <p id="file-name" class="file-name">No file selected.</p>
-        <img id="upload-preview" class="upload-preview" alt="QR upload preview" hidden />
-        <div id="upload-loading" class="loading" hidden>
-          <span class="spinner" aria-label="upload loading"></span>
-        </div>
-        <div class="result-box">
-          <strong>Result:</strong>
-          <p id="upload-result">No image uploaded yet.</p>
-          <button id="open-upload-link-btn" class="btn" disabled>Open Link</button>
-        </div>
+      <article class="feature-card glass">
+        <h2>Upload QR Image</h2>
+        <p>Upload PNG, JPG, or WEBP files and decode QR content with enhanced image processing.</p>
+        <a class="btn primary" href="upload.html">Open Upload Tool</a>
       </article>
     </section>
 
     <footer class="site-footer glass" aria-label="Site footer">
-      <p><strong>QR Generator & Scanner</strong> is a fast and secure utility for creating and decoding QR codes.</p>
-      <p>© 2026 QR Toolkit. All rights reserved.</p>
+      <p><strong>Link Pixel QR</strong> — أدوات QR حديثة بصفحات منفصلة وتجربة واضحة.</p>
+      <p>© 2026 Link Pixel QR. All rights reserved.</p>
     </footer>
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="script.js" defer></script>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>

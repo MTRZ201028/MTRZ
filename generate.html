@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Link Pixel QR | Create QR</title>
+  <meta name="description" content="Create custom QR codes with Link Pixel QR." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <main class="container app-shell">
+    <header class="hero glass">
+      <div class="hero-main">
+        <a class="site-brand" href="index.html">
+          <img class="site-logo" src="assets/logo.png" alt="Link Pixel QR" width="56" height="56" decoding="async" />
+          <span class="site-name">Link Pixel QR</span>
+        </a>
+        <span class="badge">Create QR</span>
+        <h1>Build your QR code in seconds</h1>
+        <p>Customize colors, size, and quality then download as PNG.</p>
+      </div>
+      <button id="theme-toggle" class="btn theme-btn" type="button" aria-label="Toggle theme">Dark Mode</button>
+    </header>
+
+    <nav class="top-nav glass" aria-label="Main navigation">
+      <a class="nav-link" href="index.html">Home</a>
+      <a class="nav-link active" href="generate.html">Create QR</a>
+      <a class="nav-link" href="camera.html">Scan Camera</a>
+      <a class="nav-link" href="upload.html">Upload Image</a>
+    </nav>
+
+    <article class="card glass" aria-labelledby="generate-title">
+      <h2 id="generate-title">Generate QR Code</h2>
+      <p class="section-note">Paste content, click Generate, then download your QR.</p>
+      <label for="qr-input">Enter text or URL</label>
+      <textarea id="qr-input" placeholder="https://example.com or any text..." rows="3"></textarea>
+
+      <div class="grid-2">
+        <div>
+          <label for="qr-size">Size (px)</label>
+          <input type="range" id="qr-size" min="128" max="1024" step="32" value="320" />
+          <div class="hint"><span id="qr-size-value">320</span> px</div>
+        </div>
+        <div>
+          <label for="qr-quality">Quality (Error Correction)</label>
+          <select id="qr-quality">
+            <option value="L">Low (L)</option>
+            <option value="M" selected>Medium (M)</option>
+            <option value="Q">High (Q)</option>
+            <option value="H">Highest (H)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="qr-fg-color">QR Foreground Color</label>
+          <input id="qr-fg-color" type="color" value="#000000" />
+        </div>
+        <div>
+          <label for="qr-bg-color">Background Color</label>
+          <input id="qr-bg-color" type="color" value="#ffffff" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="generate-btn" class="btn primary" type="button">Generate QR</button>
+        <button id="download-btn" class="btn primary" type="button" disabled>Download PNG</button>
+      </div>
+
+      <div class="preview-wrap">
+        <div id="qr-container" class="qr-container" aria-label="QR Preview"></div>
+      </div>
+    </article>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="script.js" defer></script>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
