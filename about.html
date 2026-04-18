@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Link Pixel QR | About</title>
+  <meta name="description" content="Learn about Link Pixel QR and why we built a clean, page-based QR toolkit." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <main class="container app-shell">
+    <header class="hero glass">
+      <div class="hero-main">
+        <a class="site-brand" href="index.html">
+          <img class="site-logo" src="assets/logo.png" alt="Link Pixel QR" width="56" height="56" decoding="async" />
+          <span class="site-name">Link Pixel QR</span>
+        </a>
+        <span class="badge">About</span>
+        <h1>About Link Pixel QR</h1>
+        <p>Simple, fast QR tools—generator, live camera scanner, and image decoding—organized into clean, separate pages.</p>
+      </div>
+      <button id="theme-toggle" class="btn theme-btn" type="button" aria-label="Toggle theme">Dark Mode</button>
+    </header>
+
+    <nav class="top-nav glass" aria-label="Main navigation">
+      <a class="nav-link" href="index.html">Home</a>
+      <a class="nav-link" href="generate.html">Create QR</a>
+      <a class="nav-link" href="camera.html">Scan Camera</a>
+      <a class="nav-link" href="upload.html">Upload Image</a>
+      <a class="nav-link active" href="about.html">About</a>
+    </nav>
+
+    <section class="page-grid">
+      <article class="card glass" aria-labelledby="about-why">
+        <h2 id="about-why">Our goal</h2>
+        <p class="section-note">
+          We aim to deliver a polished, professional experience: clear structure, dedicated pages for each workflow, and a modern UI that stays fast.
+        </p>
+        <ul class="info-list">
+          <li>QR generator with size, colors, and error-correction options.</li>
+          <li>Live camera scanning with one-click link opening.</li>
+          <li>Upload an image and decode QR content (with preprocessing for tougher images).</li>
+          <li>Clean, separate pages for each QR workflow.</li>
+        </ul>
+        <div class="link-row">
+          <a class="btn primary" href="generate.html">Create a QR code</a>
+          <a class="btn" href="camera.html">Scan with camera</a>
+        </div>
+      </article>
+
+      <aside class="card glass" aria-label="Quick info">
+        <h2>Quick tip</h2>
+        <p class="section-note">
+          If you plan to print a QR code (cards, flyers, labels), keep it at least ~2×2 cm and always test-scan before printing.
+        </p>
+        <p class="muted">Note: the current features run entirely in the browser—no backend required.</p>
+      </aside>
+    </section>
+
+    <footer class="site-footer glass" aria-label="Site footer">
+      <p><strong>Link Pixel QR</strong> — modern QR tools with clear, separate pages.</p>
+      <p>© 2026 Link Pixel QR. All rights reserved.</p>
+    </footer>
+  </main>
+
+  <script src="script.js" defer></script>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
