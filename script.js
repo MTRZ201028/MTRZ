@@ -13,6 +13,14 @@ const TEXT = {
   errNoQrToDownload: "No generated QR to download.",
   errNoCamera: "No camera is available on this device.",
   errCameraStart: "Unable to start camera. Please allow camera access.",
+  errCameraBlocked: "Camera access was blocked. Allow the camera in your browser settings, then try again.",
+  errCameraInUse: "The camera is already in use by another app or tab. Close it and retry.",
+  errCameraNotReadable: "The camera could not be opened. Try unplugging other USB cameras or restarting the browser.",
+  errCameraOverconstrained: "This camera does not support the requested mode. Try “Switch camera” or use upload.",
+  errCameraNotSupported: "Your browser does not support camera capture here. Use HTTPS or try another browser.",
+  errCameraInsecure: "Camera requires a secure page. Open this site over HTTPS (or use http://localhost for testing).",
+  errDecoderLoad: "QR decoder (jsQR) failed to load. Check your network and refresh the page.",
+  errVideoPlay: "Video could not start. Tap “Try again” or use upload.",
   successCameraStarted: "Camera started.",
   successCameraStopped: "Camera stopped.",
   successCameraRead: "QR detected from camera.",
@@ -20,10 +28,9 @@ const TEXT = {
   errNoQrInImage: "No QR code found in this image.",
   successImageRead: "QR extracted from image.",
   errInputTooLong: "Input is too long. Please use 3000 characters or less.",
-  errDecoderLoad: "QR decoder failed to load.",
 };
 
-const state = { theme: "light", lastGenerated: "", toastTimer: null, scannerScriptPromise: null };
+const state = { theme: "light", lastGenerated: "", toastTimer: null };
 const LIMITS = { maxQrInputLength: 3000 };
 
 const dom = {
@@ -43,6 +50,14 @@ const dom = {
   scanResult: document.getElementById("scan-result"),
   openLinkBtn: document.getElementById("open-link-btn"),
   cameraLoading: document.getElementById("camera-loading"),
+  cameraLoadingText: document.getElementById("camera-loading-text"),
+  cameraVideo: document.getElementById("camera-video"),
+  cameraCanvas: document.getElementById("camera-canvas"),
+  cameraErrorPanel: document.getElementById("camera-error"),
+  cameraErrorText: document.getElementById("camera-error-text"),
+  retryCameraBtn: document.getElementById("retry-camera-btn"),
+  switchCameraBtn: document.getElementById("switch-camera-btn"),
+  cameraFallbackHint: document.getElementById("camera-fallback-hint"),
   qrFile: document.getElementById("qr-file"),
   uploadTriggerBtn: document.getElementById("upload-trigger-btn"),
   fileName: document.getElementById("file-name"),
@@ -53,7 +68,9 @@ const dom = {
 };
 
 const hasGeneratorPage = Boolean(dom.qrInput && dom.generateBtn && dom.qrContainer);
-const hasCameraPage = Boolean(dom.startScanBtn && dom.stopScanBtn && dom.scanResult);
+const hasCameraPage = Boolean(
+  dom.startScanBtn && dom.stopScanBtn && dom.scanResult && dom.cameraVideo && dom.cameraCanvas
+);
 const hasUploadPage = Boolean(dom.qrFile && dom.uploadTriggerBtn && dom.uploadResult);
 
 function isValidHttpUrl(value) {
@@ -66,6 +83,7 @@ function isValidHttpUrl(value) {
 }
 
 function showToast(message, type = "success") {
+  if (!dom.toast) return;
   if (state.toastTimer) clearTimeout(state.toastTimer);
   dom.toast.textContent = message;
   dom.toast.hidden = false;
@@ -78,19 +96,6 @@ function showToast(message, type = "success") {
       dom.toast.hidden = true;
     }, 220);
   }, 2200);
-}
-
-async function ensureScannerLibraryLoaded() {
-  if (window.Html5Qrcode) return;
-  if (state.scannerScriptPromise) return state.scannerScriptPromise;
-  state.scannerScriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/html5-qrcode";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("scanner library failed to load"));
-    document.body.appendChild(script);
-  });
-  return state.scannerScriptPromise;
 }
 
 const ThemeModule = {
@@ -201,88 +206,325 @@ const GeneratorModule = {
   },
 };
 
+function isSecureCameraContext() {
+  if (typeof window === "undefined") return false;
+  const { protocol, hostname } = window.location;
+  return protocol === "https:" || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+}
+
+function mapCameraError(err) {
+  const name = err && err.name;
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") return TEXT.errCameraBlocked;
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") return TEXT.errNoCamera;
+  if (name === "NotReadableError" || name === "TrackStartError") return TEXT.errCameraNotReadable;
+  if (name === "OverconstrainedError" || name === "ConstraintNotSatisfiedError") return TEXT.errCameraOverconstrained;
+  if (name === "NotSupportedError" || name === "TypeError") return TEXT.errCameraNotSupported;
+  if (name === "SecurityError") return TEXT.errCameraInsecure;
+  if (name === "AbortError") return TEXT.errCameraInUse;
+  return err && err.message ? `${TEXT.errCameraStart} (${err.message})` : TEXT.errCameraStart;
+}
+
 const CameraModule = {
-  scanner: null,
   state: {
-    videoStream: null,
     cameraActive: false,
     scanResult: "",
+    rafId: null,
+    lastDecodeTs: 0,
+    videoInputs: [],
+    preferredDeviceIndex: 0,
   },
-  async getScanner() {
-    await ensureScannerLibraryLoaded();
-    if (!this.scanner) this.scanner = new Html5Qrcode("camera-reader");
-    return this.scanner;
-  },
-  setLoading(active) {
+  scanIntervalMs: 110,
+  decodeMaxWidth: 720,
+
+  setLoading(active, message) {
     if (!dom.cameraLoading) return;
     dom.cameraLoading.hidden = !active;
+    if (dom.cameraLoadingText && message) dom.cameraLoadingText.textContent = message;
   },
+
+  setUiError(message) {
+    if (!dom.cameraErrorPanel || !dom.cameraErrorText) return;
+    const show = Boolean(message);
+    dom.cameraErrorText.textContent = message || "";
+    dom.cameraErrorPanel.hidden = !show;
+    if (dom.cameraFallbackHint) dom.cameraFallbackHint.hidden = !show;
+  },
+
+  clearUiError() {
+    this.setUiError("");
+  },
+
   setResult(text, toastOnSuccess = true) {
     if (!dom.scanResult || !dom.openLinkBtn) return;
-    this.state.scanResult = text || "";
+    const next = text || "";
+    const changed = next !== this.state.scanResult;
+    this.state.scanResult = next;
     dom.scanResult.textContent = this.state.scanResult || TEXT.cameraDefaultResult;
     dom.openLinkBtn.disabled = !isValidHttpUrl(this.state.scanResult);
-    if (toastOnSuccess && this.state.scanResult) showToast(TEXT.successCameraRead);
+    if (toastOnSuccess && changed && this.state.scanResult) showToast(TEXT.successCameraRead);
   },
+
+  stopDecodeLoop() {
+    if (this.state.rafId != null) {
+      cancelAnimationFrame(this.state.rafId);
+      this.state.rafId = null;
+    }
+    this.state.lastDecodeTs = 0;
+  },
+
+  async refreshVideoInputs() {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      this.state.videoInputs = [];
+      return this.state.videoInputs;
+    }
+    const all = await navigator.mediaDevices.enumerateDevices();
+    this.state.videoInputs = all.filter((d) => d.kind === "videoinput");
+    return this.state.videoInputs;
+  },
+
+  async getUserMediaSequence() {
+    const attempts = [
+      { video: { facingMode: { ideal: "environment" } }, audio: false },
+      { video: { facingMode: { ideal: "user" } }, audio: false },
+      { video: true, audio: false },
+    ];
+    let lastErr = null;
+    for (let i = 0; i < attempts.length; i += 1) {
+      try {
+        return await navigator.mediaDevices.getUserMedia(attempts[i]);
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    await this.refreshVideoInputs();
+    const devices = this.state.videoInputs;
+    for (let i = 0; i < devices.length; i += 1) {
+      const deviceId = devices[i].deviceId;
+      if (!deviceId) continue;
+      try {
+        return await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr || new Error("getUserMedia failed");
+  },
+
+  async getStreamForDeviceIndex(index) {
+    await this.refreshVideoInputs();
+    const devices = this.state.videoInputs;
+    if (!devices.length) throw new DOMException("No camera", "NotFoundError");
+    const pick = devices[Math.max(0, index) % devices.length];
+    if (!pick.deviceId) {
+      return this.getUserMediaSequence();
+    }
+    return navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: pick.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    });
+  },
+
+  detachStream() {
+    const video = dom.cameraVideo;
+    this.stopDecodeLoop();
+    if (video && video.srcObject) {
+      const ms = video.srcObject;
+      ms.getTracks().forEach((t) => t.stop());
+      video.srcObject = null;
+    }
+  },
+
+  async attachAndPlay(stream) {
+    const video = dom.cameraVideo;
+    if (!video) return;
+    this.detachStream();
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.muted = true;
+    video.playsInline = true;
+    video.srcObject = stream;
+    if (typeof video.play === "function") {
+      try {
+        await video.play();
+      } catch {
+        throw new Error(TEXT.errVideoPlay);
+      }
+    }
+  },
+
+  startDecodeLoop() {
+    const video = dom.cameraVideo;
+    const canvas = dom.cameraCanvas;
+    if (!video || !canvas) return;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const tick = (ts) => {
+      if (!this.state.cameraActive) return;
+      this.state.rafId = requestAnimationFrame(tick);
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+      if (ts - this.state.lastDecodeTs < this.scanIntervalMs) return;
+      this.state.lastDecodeTs = ts;
+      if (!window.jsQR) return;
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) return;
+
+      const scale = Math.min(1, this.decodeMaxWidth / vw);
+      const cw = Math.max(1, Math.floor(vw * scale));
+      const ch = Math.max(1, Math.floor(vh * scale));
+      if (canvas.width !== cw || canvas.height !== ch) {
+        canvas.width = cw;
+        canvas.height = ch;
+      }
+      ctx.drawImage(video, 0, 0, cw, ch);
+      let decoded = null;
+      try {
+        const imageData = ctx.getImageData(0, 0, cw, ch);
+        decoded = window.jsQR(imageData.data, cw, ch, { inversionAttempts: "attemptBoth" });
+      } catch {
+        return;
+      }
+      if (decoded?.data) {
+        this.setResult(decoded.data, true);
+      }
+    };
+    this.state.rafId = requestAnimationFrame(tick);
+  },
+
+  updateSwitchButton() {
+    if (!dom.switchCameraBtn) return;
+    const n = this.state.videoInputs.length;
+    dom.switchCameraBtn.disabled = !this.state.cameraActive || n < 2;
+  },
+
+  syncCurrentDeviceIndexFromTrack() {
+    const video = dom.cameraVideo;
+    const track = video?.srcObject?.getVideoTracks?.()?.[0];
+    const id = track?.getSettings?.()?.deviceId;
+    if (!id) return;
+    const idx = this.state.videoInputs.findIndex((d) => d.deviceId === id);
+    if (idx >= 0) this.state.preferredDeviceIndex = idx;
+  },
+
   async start() {
     if (!hasCameraPage) return;
     if (this.state.cameraActive) return;
+    if (!isSecureCameraContext()) {
+      const msg = TEXT.errCameraInsecure;
+      this.setResult("", false);
+      this.setUiError(msg);
+      showToast(msg, "error");
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const msg = TEXT.errCameraNotSupported;
+      this.setResult("", false);
+      this.setUiError(msg);
+      showToast(msg, "error");
+      return;
+    }
+    if (!window.jsQR) {
+      const msg = TEXT.errDecoderLoad;
+      this.setResult("", false);
+      this.setUiError(msg);
+      showToast(msg, "error");
+      return;
+    }
+
+    this.clearUiError();
+    this.setLoading(true, "Opening camera…");
     try {
-      await ensureScannerLibraryLoaded();
-      const cameras = await Html5Qrcode.getCameras();
-      if (!cameras || cameras.length === 0) {
-        this.setResult(TEXT.errNoCamera, false);
-        showToast(TEXT.errNoCamera, "error");
-        return;
-      }
-      const scanner = await this.getScanner();
-      this.setLoading(true);
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => this.setResult(decodedText, true),
-        () => {}
-      );
+      const stream = await this.getUserMediaSequence();
+      await this.attachAndPlay(stream);
+      await this.refreshVideoInputs();
+      this.syncCurrentDeviceIndexFromTrack();
       this.state.cameraActive = true;
-      this.state.videoStream = "active";
       dom.startScanBtn.disabled = true;
       dom.stopScanBtn.disabled = false;
+      this.updateSwitchButton();
+      this.startDecodeLoop();
       showToast(TEXT.successCameraStarted);
-    } catch {
-      this.setResult(TEXT.errCameraStart, false);
-      showToast(TEXT.errCameraStart, "error");
+    } catch (err) {
+      this.detachStream();
+      const msg = mapCameraError(err);
+      this.setResult("", false);
+      this.setUiError(msg);
+      showToast(msg, "error");
     } finally {
       this.setLoading(false);
     }
   },
-  async stop() {
-    if (!hasCameraPage) return;
-    if (!this.state.cameraActive || !this.scanner) return;
+
+  async switchCamera() {
+    if (!hasCameraPage || !this.state.cameraActive) return;
+    if (this.state.videoInputs.length < 2) return;
+    this.state.preferredDeviceIndex = (this.state.preferredDeviceIndex + 1) % this.state.videoInputs.length;
+    this.setLoading(true, "Switching camera…");
     try {
-      await this.scanner.stop();
-      await this.scanner.clear();
+      this.clearUiError();
+      const stream = await this.getStreamForDeviceIndex(this.state.preferredDeviceIndex);
+      await this.attachAndPlay(stream);
+      await this.refreshVideoInputs();
+      this.syncCurrentDeviceIndexFromTrack();
+      this.startDecodeLoop();
+    } catch (err) {
+      const msg = mapCameraError(err);
+      this.setUiError(msg);
+      showToast(msg, "error");
+      await this.stop({ silent: true });
+    } finally {
+      this.setLoading(false);
+    }
+  },
+
+  async stop(options = {}) {
+    const { silent = false } = options;
+    if (!hasCameraPage) return;
+    if (!this.state.cameraActive && !dom.cameraVideo?.srcObject) {
+      dom.startScanBtn.disabled = false;
+      dom.stopScanBtn.disabled = true;
+      this.updateSwitchButton();
+      return;
+    }
+    try {
+      this.detachStream();
     } catch {
       // no-op
     } finally {
       this.state.cameraActive = false;
-      this.state.videoStream = null;
       dom.startScanBtn.disabled = false;
       dom.stopScanBtn.disabled = true;
-      showToast(TEXT.successCameraStopped);
+      this.updateSwitchButton();
+      if (!silent) showToast(TEXT.successCameraStopped);
     }
   },
+
   async reset() {
     if (!hasCameraPage) return;
-    if (this.state.cameraActive) await this.stop();
+    await this.stop({ silent: true });
     this.state.scanResult = "";
     this.setResult(TEXT.cameraDefaultResult, false);
-    const reader = document.getElementById("camera-reader");
-    if (reader) reader.innerHTML = "";
+    this.clearUiError();
+    this.setLoading(false);
+    if (dom.cameraFallbackHint) dom.cameraFallbackHint.hidden = true;
   },
+
   init() {
     if (!hasCameraPage) return;
     dom.startScanBtn.addEventListener("click", () => this.start());
-    dom.stopScanBtn.addEventListener("click", () => this.stop());
+    dom.stopScanBtn.addEventListener("click", () => this.stop({ silent: false }));
+    if (dom.retryCameraBtn) {
+      dom.retryCameraBtn.addEventListener("click", () => {
+        this.clearUiError();
+        void this.start();
+      });
+    }
+    if (dom.switchCameraBtn) {
+      dom.switchCameraBtn.addEventListener("click", () => void this.switchCamera());
+    }
     dom.openLinkBtn.addEventListener("click", () => {
       if (isValidHttpUrl(this.state.scanResult)) {
         window.open(this.state.scanResult, "_blank", "noopener,noreferrer");
@@ -290,8 +532,10 @@ const CameraModule = {
     });
     dom.startScanBtn.disabled = false;
     dom.stopScanBtn.disabled = true;
+    this.updateSwitchButton();
     this.setResult(TEXT.cameraDefaultResult, false);
     this.setLoading(false);
+    this.clearUiError();
   },
 };
 
