@@ -38,37 +38,15 @@
 
     <article id="camera-scanner-container" class="card glass" aria-labelledby="camera-title">
       <h2 id="camera-title">Scan QR with Camera</h2>
-      <p class="section-note">Allow camera access and place a QR code inside the frame. Works best on <strong>HTTPS</strong> or <code>localhost</code>.</p>
+      <p class="section-note">Allow camera access and place a QR code inside the frame.</p>
       <div class="actions">
         <button id="start-scan-btn" class="btn primary" type="button">Start Camera</button>
         <button id="stop-scan-btn" class="btn" type="button" disabled>Stop Camera</button>
-        <button id="switch-camera-btn" class="btn" type="button" disabled title="Switch between available cameras">Switch camera</button>
       </div>
-      <div id="camera-view-wrap" class="camera-view-wrap reader">
-        <div id="camera-loading" class="camera-loading" hidden aria-live="polite">
-          <span class="spinner" aria-hidden="true"></span>
-          <span id="camera-loading-text">Opening camera…</span>
-        </div>
-        <div id="camera-error" class="camera-error" hidden role="alert">
-          <p id="camera-error-text"></p>
-          <div class="camera-error-actions">
-            <button id="retry-camera-btn" class="btn primary" type="button">Try again</button>
-            <a class="btn" href="upload.html">Upload QR image</a>
-          </div>
-        </div>
-        <video
-          id="camera-video"
-          class="camera-video"
-          playsinline
-          webkit-playsinline
-          muted
-          autoplay
-        ></video>
-        <canvas id="camera-canvas" class="camera-canvas" hidden></canvas>
+      <div id="camera-loading" class="loading" hidden>
+        <span class="spinner" aria-label="camera loading"></span>
       </div>
-      <p id="camera-fallback-hint" class="camera-fallback-hint" hidden>
-        Camera not available? <a href="upload.html">Decode a QR from an image instead</a>.
-      </p>
+      <div id="camera-reader" class="reader"></div>
       <div class="result-box">
         <strong>Result:</strong>
         <p id="scan-result">No scan yet.</p>
@@ -82,7 +60,6 @@
     </footer>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="script.js" defer></script>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>
